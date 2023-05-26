@@ -6,6 +6,7 @@ import com.springboot.application.testing.shared.SpringApplicationContext;
 import com.springboot.application.testing.shared.UserDto;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +25,12 @@ import java.util.Date;
 import java.util.Map;
 
 public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+    static {
+        byte[] keyBytes = Keys.secretKeyFor(SignatureAlgorithm.HS512).getEncoded();
+        SecurityConstants.tokenSecret = keyBytes;
+    }
+
     private final AuthenticationManager authenticationManager;
 
     public AuthenticationFilter(AuthenticationManager authenticationManager) {
@@ -63,7 +70,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
         String token = Jwts.builder()
                 .setSubject(userName)
                 .setExpiration(new Date(System.currentTimeMillis() + (long) 864000000))
-                .signWith(SignatureAlgorithm.HS512, SecurityConstants.TOKEN_SECRET)
+                .signWith(SignatureAlgorithm.HS512, SecurityConstants.tokenSecret)
                 .compact();
         UsersService userService = (UsersService) SpringApplicationContext.getBean("usersService");
         UserDto userDto = userService.getUser(userName);
